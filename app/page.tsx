@@ -1,39 +1,16 @@
-import Image from "next/image";
-import styles from "./page.module.css";
-import { useEffect, useState } from "react";
+import Carousel from "../components/carousel";
 
 export default async function Home() {
-  const aMonths = [
-    "",
-    "januari",
-    "februari",
-    "maart",
-    "april",
-    "mei",
-    "juni",
-    "juli",
-    "augustus",
-    "september",
-    "oktober",
-    "november",
-    "december",
-  ];
+  let response = await fetch(
+    "https://www.zuidwestupdate.nl/wp-json/wp/v2/tv/29457"
+  );
+  let data = await response.json();
+  let episodes = data.episodes.filter((episode) => {
+    const episodeDate = new Date(episode.date);
+    return episodeDate > new Date("2021-01-01");
+  });
 
-  let episodes = [];
-  const fetchData = async () => {
-    let response = await fetch(
-      "https://www.zuidwestupdate.nl/wp-json/wp/v2/tv/29457"
-    );
-    let data = await response.json();
-    let episodes = data.episodes.filter((episode) => {
-      const episodeDate = new Date(episode.date);
-      return episodeDate > new Date("2021-01-01");
-    });
-
-    return episodes;
-  };
-
-  episodes = await fetchData();
+  let dateFormatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "long" });
 
   return (
     <>
@@ -59,15 +36,12 @@ export default async function Home() {
           </div>
         </div>
         <div className="main">
-          <div className="carousel">
+          <Carousel>
             {episodes.map((episode: any, index) => {
               const episodeDate = new Date(episode.date);
-              const day = episodeDate.getDate();
-              const month = aMonths[episodeDate.getMonth() + 1];
-              const year = episodeDate.getFullYear();
 
               return (
-                <div key={index} className="cell">
+                <div key={episode.date} className="cell">
                   <div
                     style={{
                       width: "100%",
@@ -82,13 +56,13 @@ export default async function Home() {
                     <div className="title">
                       {episode.title}
                       <br />
-                      {day} {month} {year}
+                      {dateFormatter.format(episodeDate)}
                     </div>
                   </div>
                 </div>
               );
             })}
-            {!episodes && (
+            {!episodes.length && (
               <div className="cell">
                 <div
                   style={{
@@ -104,21 +78,10 @@ export default async function Home() {
                 </div>
               </div>
             )}
-          </div>
+          </Carousel>
         </div>
         <div className="footer"></div>
       </div>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-    jQuery(".carousel").slick({
-    infinite: false,
-    slidesToShow: 1,
-    slidesToScroll: 1,
-    centerMode: false
-  });`,
-        }}
-      ></script>
     </>
   );
 }
